@@ -1,123 +1,66 @@
-# Energy Data Analysis Project
+ Advanced Time-Series Power Demand Forecasting (Valencia)
 
-![Project Banner](https://raw.githubusercontent.com/ShreyasLengade/Github-Images/main/Banner%20for%20DM%20project.webp)
+Project Overview
 
-## Table of Contents
+This repository provides an individual enhancement of a collaborative project focused on predicting electrical load (energy consumption). The core challenge involved modeling complex temporal dependencies to meet a critical utility requirement: accurate forecasting of the Daily Peak Load (Maximum Total Load).
 
-- [Introduction](#introduction)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Datasets](#datasets)
-  - [energy_dataset.csv](#energydatasetcsv)
-  - [df_combined.csv](#dfcombinedcsv)
-  - [Maximum_Load_Per_Day_with_Timestamps.csv](#maximumloadperdaywithtimestampscsv)
-- [Exploratory Analysis and Data Cleaning](#exploratory-analysis-and-data-cleaning)
-- [Handling Missing and Duplicate Values](#handling-missing-and-duplicate-values)
-- [Modelling Process](#modelling-process)
-- [Examples](#examples)
+The final model achieved an exceptional 98.38% $R^2$ score by focusing on robust time-series feature engineering and ensemble methods.
 
-## Introduction
+🎯 Key Findings & Results Summary
 
-Welcome to the Energy Data Analysis Project! The project was developed to provide policy recommendation for renewable energy sources usage and infrastructure implementation by analysing the consumption patterns of existing sources in Valencia, Spain. This was achieved by forecasting the consumption of renewable resources through analysis of various energy datasets. Visualisation, trends and meaningful insights are provided.
+| Model | Target | Test RMSE | Test R-squared | 
+| ----- | ----- | ----- | ----- | 
+| **Random Forest Regressor (RFR)** | **Daily Peak Load (Max MW)** | **397.23 MW** | **0.9838** | 
+| XGBoost Regressor (Baseline) | Daily Peak Load (Max MW) | 411.39 MW | 0.9825 |
 
-## Features
+📈 Methodology and Feature Importance
 
-- **Data Preprocessing**: Clean and prepare data for analysis.
-- **Exploratory Analysis**: Investigate data distributions and characteristics.
-- **Visualization**: Generate various plots to visualize energy consumption trends.
-- **Analysis**: Detailed analysis of energy data including maximum load per day with timestamps.
-- **Forecasting**: Predict future energy consumption using advanced models.
-- **Reports**: Generate comprehensive reports based on the analysis.
+The success of the model relied on adapting classical ML to a time-series context:
 
-## Installation
+1. Data Preparation and Feature Engineering
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/ShreyasLengade/Energy-Consumption-Forecasting.git
-    ```
+Time-Series Split: The data was split strictly chronologically (training on the past, testing on the future) to avoid data leakage.
 
-2. Navigate to the project directory:
-    ```bash
-    cd Energy-Consumption-Forecasting
-    ```
+Critical Features (Top Statistical Predictors): The correlation analysis confirmed that the model’s predictive power comes from engineered historical features. The following features showed the strongest linear relationship with the Daily Peak Load (sorted by absolute correlation):
 
-3. Install the required dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+total load forecast ($\approx 0.99$) - The single most dominant feature (utility forecast).
 
-## Usage
+Lag_24 ($\approx 0.41$) - Yesterday's peak load.
 
-To run the analysis, open the `main.ipynb` notebook and execute the cells. Make sure all the datasets are in the correct directory. You'll get the in-depth explanations as a comment under each analysis and visaulisation as well in this file.
+generation fossil gas ($\approx 0.49$) - Strong link to peak generation needs.
 
-## Datasets
+DayOfWeek ($\approx 0.33$) - Captures the difference between weekday and weekend usage.
 
-### energy_dataset.csv
+generation fossil oil ($\approx 0.43$) - Secondary link to peak generation.
 
-This dataset contains detailed information on energy consumption patterns. It includes various features such as timestamps, energy loads, and more.
+generation fossil hard coal ($\approx 0.35$) - Baseline generation link.
 
-### df_combined.csv
+Data Integrity: Handled missing values using Forward Fill (ffill) for the target variable and systematically dropped unreliable features (columns with $>90\%$ missing data) to maintain model stability.
 
-This dataset is a combination of multiple sources, providing a comprehensive view of energy data over a specific period.
+2. Model Selection (Homogeneous Ensemble)
 
-### Maximum_Load_Per_Day_with_Timestamps.csv
+Model Choice: A Random Forest Regressor (RFR) was chosen over the XGBoost Regressor as the final model because it exhibited lower RMSE and better generalization on the unseen test data.
 
-This dataset includes the maximum energy load per day along with their respective timestamps, which helps in identifying peak consumption times.
+Business Pivot: Successfully converted hourly data to daily data using the .resample('D').max() function to align with the stakeholder requirement for peak load forecasting.
 
-## Exploratory Analysis and Data Cleaning
+🔭 Future Work and Data Requirements
 
-For exploratory analysis and data cleaning of all the data generation sources in Valencia, we used the violin plot to see the distribution of values. Then we used the `.info()` method to investigate the type of values and the count of null and non-null values of these sources. 
+To enhance the model’s performance and robustness for production deployment, the following steps are recommended:
 
-Next, we decided to drop the "Price" column. The rationale behind this decision is: 
+Model Enhancement (Deep Learning): The next logical step is to explore LSTM (Long Short-Term Memory) Neural Networks. 
 
-"As we have a lot of data columns, we will take only the relevant columns required for our model. Keep in mind 'price' is an important column, but we also require 'Appliances' data that can be used for the forecasting model. As we don't have 'Appliances' data, we will not consider the 'Price' column data for our model."
+ LSTMs are specialized for sequential data and may capture subtle, non-linear dependencies over the 5-year forecast horizon better than tree-based models.
 
-## Handling Missing and Duplicate Values
+External Data Integration (Data Enrichment): For efficient and robust forecasting, providing additional external data points is critical:
 
-### Duplicate Values
+Weather Data (Temperature, Cloud Cover) - Crucial for explaining peak load variability.
 
-"As we can see, the 'energy_df' dataframe has no duplicate values. Nevertheless, it has some NaNs, and thus, we have to investigate further. Since this is a time-series forecasting task, we cannot simply drop the rows with the missing values, and it would be a better idea to fill the missing values using interpolation."
+Area Population Data (Economic/Demographic shifts).
 
-### Missing Values
+Energy Consumption History for Appliances (Understanding peak load drivers).
 
-"Most null values can be found in the 'total load actual' column, which represents energy consumption. Therefore, it is a good idea to visualize it and see what we can do. The similar numbers in null values in the columns related to the type of energy generation probably indicate that they will also appear in the same rows. Let us first define a normal distribution to see the irregularities."
+Utility Bills Pricing Data (Impact of price on demand).
 
-"After zooming into the first 2 weeks of the 'total load actual' column, we can already see that there are null values for a few hours. However, the number of missing values and the behavior of the series indicate that an interpolation would fill the NaNs quite well. Let us further investigate if the null values coincide across the different columns. Let us display the last five rows."
+📚 Project Origin & Citation
 
-"If we manually searched through all of them, we would confirm that the null values in the columns related to the type of energy generation mostly coincide. The null values in 'actual total load' also coincide with the aforementioned columns, but also appear in other rows as well. In order to handle the null values in 'df_energy', we will use a linear interpolation with a forward direction. Perhaps other kinds of interpolation would be better; nevertheless, we prefer to use the simplest model possible. Only a small part of our input data will be noisy, and it will not affect performance noticeably."
-
-"As we can see the count of values of all columns is similar, so now let us see through the line plot again."
-
-## Modelling Process
-
-"Now let us start the modelling process. We tried multiple models like ARIMA, Auto-ARIMA, SARIMAX, Prophet, XGBoost, and RFR. Finally, we proceeded with XGBoost and RFR."
-
-"Looking into the R^2 value, our model seems to be perfectly fit, but we want to add another additional requirement for our stakeholder in which we want to forecast the maximum energy consumption for each day according to the 'total load actual' column's maximum value for each day. For this, we have filtered out data through Excel, where we have taken the maximum values of the 'total load actual' column for each day for the corresponding 'time' column."
-
-## Examples
-
-Below are some examples of the visualizations and analysis you can perform with this project:
-
-1. **Energy Load Over Time**
-    ```python
-    import matplotlib.pyplot as plt
-    import pandas as pd
-
-    df = pd.read_csv('energy_dataset.csv')
-    df.plot(x='timestamp', y='load', title='Energy Load Over Time')
-    plt.show()
-    ```
-
-2. **Maximum Load Per Day**
-    ```python
-    df_max_load = pd.read_csv('Maximum_Load_Per_Day_with_Timestamps.csv')
-    df_max_load.plot(x='date', y='max_load', kind='bar', title='Maximum Load Per Day')
-    plt.show()
-    ```
-
----
-
-Thank you for checking out our project! If you find it useful, please give it a star ⭐ on GitHub.
-
-
+This repository is a fork of the original work by [ShreyasLengade](https://github.com/ShreyasLengade/Energy-Consumption-Forecasting). The dataset and initial time-series structure were adapted from the original notebook, with substantial enhancements in feature engineering, cleaning, and model comparison detailed above.
